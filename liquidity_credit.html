@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liquidity Loan — Credit Request</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg: #f8f8f6;
+      --color-surface: #ffffff;
+      --color-border: rgba(0,0,0,0.12);
+      --color-border-md: rgba(0,0,0,0.22);
+      --color-text-primary: #1a1a18;
+      --color-text-secondary: #5f5e5a;
+      --color-text-tertiary: #9b9a96;
+      --color-bg-secondary: #f1efe8;
+      --step-active: #1D9E75;
+      --step-done: #0F6E56;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #1c1c1a;
+        --color-surface: #2a2a28;
+        --color-border: rgba(255,255,255,0.12);
+        --color-border-md: rgba(255,255,255,0.22);
+        --color-text-primary: #f0ede6;
+        --color-text-secondary: #b4b2a9;
+        --color-text-tertiary: #6e6d69;
+        --color-bg-secondary: #232321;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .shell { width: 100%; max-width: 600px; }
+    .header { margin-bottom: 2rem; }
+    .header h1 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+    .header p { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+
+    .stepper { display: flex; align-items: center; margin-bottom: 2rem; }
+    .step-item { display: flex; align-items: center; gap: 8px; }
+    .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; transition: all 0.3s; }
+    .step-dot.active { background: var(--step-active); color: #fff; }
+    .step-dot.done { background: var(--step-done); color: #fff; }
+    .step-dot.inactive { background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 0.5px solid var(--color-border); }
+    .step-label { font-size: 12px; color: var(--color-text-secondary); white-space: nowrap; }
+    .step-label.active { color: var(--step-active); font-weight: 500; }
+    .step-connector { flex: 1; height: 0.5px; background: var(--color-border); margin: 0 8px; min-width: 16px; }
+    .step-connector.done { background: var(--step-done); }
+
+    .card { background: var(--color-surface); border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1rem; }
+    .field-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: block; }
+    .field-row { margin-bottom: 1.25rem; }
+    .field-row:last-child { margin-bottom: 0; }
+
+    .currency-amount { display: flex; gap: 10px; }
+    .currency-select { width: 110px; flex-shrink: 0; }
+
+    select, input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%; height: 40px; padding: 0 12px;
+      border: 0.5px solid var(--color-border-md); border-radius: var(--radius-md);
+      background: var(--color-surface); color: var(--color-text-primary);
+      font-size: 14px; font-family: inherit; transition: border-color 0.15s;
+      -webkit-appearance: none; appearance: none;
+    }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235f5e5a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    select:focus, input:focus { outline: none; border-color: var(--step-active); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+
+    .quick-amounts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+    .collateral-options { display: flex; flex-direction: column; gap: 8px; }
+    .collateral-card { border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+    .collateral-card:hover { border-color: var(--color-border-md); background: var(--color-bg-secondary); }
+    .collateral-card.selected { border: 1.5px solid var(--step-active); background: #E1F5EE; }
+    .col-radio { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--color-border-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .collateral-card.selected .col-radio { border-color: var(--step-active); background: var(--step-active); }
+    .col-radio-inner { width: 6px; height: 6px; border-radius: 50%; background: #fff; opacity: 0; transition: opacity 0.2s; }
+    .collateral-card.selected .col-radio-inner { opacity: 1; }
+    .col-info { flex: 1; }
+    .col-name { font-size: 14px; font-weight: 500; }
+    .col-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+    .col-amount { font-size: 15px; font-weight: 500; text-align: right; }
+    .col-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-top: 4px; display: inline-block; }
+    .badge-ok { background: #E1F5EE; color: #0F6E56; }
+    .badge-warn { background: #FAEEDA; color: #854F0B; }
+
+    .eligibility-check { border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: flex-start; gap: 10px; font-size: 13px; transition: all 0.3s; margin-top: 12px; }
+    .eligibility-check.pending { background: var(--color-bg-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border); }
+    .eligibility-check.checking { background: #FAEEDA; color: #854F0B; border: 0.5px solid #FAC775; }
+    .eligibility-check.ok { background: #E1F5EE; color: #0F6E56; border: 0.5px solid #9FE1CB; }
+    .eligibility-check.fail { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+    .elig-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    .date-hint { font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .pill { padding: 6px 14px; border-radius: 20px; border: 0.5px solid var(--color-border-md); font-size: 13px; cursor: pointer; transition: all 0.2s; color: var(--color-text-secondary); background: transparent; font-family: inherit; }
+    .pill:hover { border-color: var(--step-active); color: var(--step-active); }
+    .pill.selected { border: 1.5px solid var(--step-active); background: #E1F5EE; color: #0F6E56; font-weight: 500; }
+
+    .summary-row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 0.5px solid var(--color-border); font-size: 13px; }
+    .summary-row:last-of-type { border-bottom: none; }
+    .summary-label { color: var(--color-text-secondary); }
+    .summary-value { font-weight: 500; }
+    .summary-total { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 0; font-size: 16px; border-top: 0.5px solid var(--color-border); margin-top: 4px; }
+    .summary-total .sl { font-weight: 500; }
+    .summary-total .sv { color: var(--step-active); font-weight: 500; font-size: 18px; }
+
+    .offer-box { border: 1.5px solid var(--step-active); border-radius: var(--radius-lg); padding: 1.5rem; background: #E1F5EE; }
+    .offer-title { font-size: 15px; font-weight: 500; color: #0F6E56; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+    .offer-terms { font-size: 12px; color: #0F6E56; margin-top: 1rem; line-height: 1.6; padding: 10px 12px; background: rgba(255,255,255,0.5); border-radius: var(--radius-md); }
+    .agree-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 1rem; cursor: pointer; }
+    .agree-check { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--color-border-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-top: 1px; }
+    .agree-check.checked { background: var(--step-active); border-color: var(--step-active); }
+    .agree-text { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+
+    .btn-primary { width: 100%; height: 44px; border-radius: var(--radius-md); background: var(--step-active); color: #fff; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+    .btn-primary:hover { background: #0F6E56; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { height: 40px; border-radius: var(--radius-md); background: transparent; color: var(--color-text-secondary); border: 0.5px solid var(--color-border-md); font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; padding: 0 16px; }
+    .btn-secondary:hover { background: var(--color-bg-secondary); }
+
+    .actions { margin-top: 1.5rem; }
+    .step-nav { display: flex; gap: 8px; margin-top: 8px; }
+    .step-nav .btn-primary { flex: 1; }
+
+    .loader-row { display: flex; align-items: center; gap: 12px; color: var(--color-text-secondary); font-size: 14px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--color-border); border-top-color: var(--step-active); border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
+    .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .success-screen { text-align: center; padding: 2rem 1rem; }
+    .success-icon { width: 64px; height: 64px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 28px; color: #1D9E75; }
+    .success-screen h2 { font-size: 22px; font-weight: 500; margin-bottom: 8px; }
+    .success-screen p { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; max-width: 380px; margin: 0 auto; }
+    .ref-code { display: inline-block; margin-top: 1rem; padding: 6px 16px; background: var(--color-bg-secondary); border-radius: 20px; font-family: monospace; font-size: 13px; border: 0.5px solid var(--color-border); }
+
+    .hidden { display: none !important; }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <h1>Liquidity loan</h1>
+    <p>Borrow against your portfolio without selling your assets.</p>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper" id="stepper">
+    <div class="step-item">
+      <div class="step-dot active" id="dot-1"><i class="ti ti-currency-dollar" style="font-size:14px"></i></div>
+      <span class="step-label active" id="lbl-1">Borrow</span>
+    </div>
+    <div class="step-connector" id="conn-1"></div>
+    <div class="step-item">
+      <div class="step-dot inactive" id="dot-2">2</div>
+      <span class="step-label" id="lbl-2">Collateral</span>
+    </div>
+    <div class="step-connector" id="conn-2"></div>
+    <div class="step-item">
+      <div class="step-dot inactive" id="dot-3">3</div>
+      <span class="step-label" id="lbl-3">Repayment</span>
+    </div>
+    <div class="step-connector" id="conn-3"></div>
+    <div class="step-item">
+      <div class="step-dot inactive" id="dot-4">4</div>
+      <span class="step-label" id="lbl-4">Review</span>
+    </div>
+  </div>
+
+  <!-- Step 1: Borrow -->
+  <div id="screen-1" class="fade-in">
+    <div class="card">
+      <div class="field-row">
+        <span class="field-label">Currency &amp; amount to borrow</span>
+        <div class="currency-amount">
+          <select class="currency-select" id="borrow-currency">
+            <option value="USD">🇺🇸 USD</option>
+            <option value="EUR">🇪🇺 EUR</option>
+            <option value="GBP">🇬🇧 GBP</option>
+            <option value="NGN">🇳🇬 NGN</option>
+            <option value="CHF">🇨🇭 CHF</option>
+          </select>
+          <input style="flex:1;" type="number" id="borrow-amount" placeholder="0.00" min="1000" step="100" />
+        </div>
+        <p class="date-hint hidden" id="amount-hint">
+          Min: <span id="min-label">1,000</span> <span class="cur-label">USD</span> &nbsp;·&nbsp; Max: <span id="max-label">500,000</span> <span class="cur-label">USD</span>
+        </p>
+      </div>
+    </div>
+    <div class="quick-amounts" id="quick-amounts">
+      <button class="pill" onclick="setAmount(5000)">5,000</button>
+      <button class="pill" onclick="setAmount(10000)">10,000</button>
+      <button class="pill" onclick="setAmount(25000)">25,000</button>
+      <button class="pill" onclick="setAmount(50000)">50,000</button>
+      <button class="pill" onclick="setAmount(100000)">100,000</button>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" id="btn-1" onclick="goTo(2)" disabled>
+        Continue <i class="ti ti-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Collateral -->
+  <div id="screen-2" class="hidden">
+    <div class="card">
+      <div class="field-row">
+        <span class="field-label">Select collateral account</span>
+        <div class="collateral-options">
+          <div class="collateral-card" onclick="selectCollateral(this,'Alpha Growth Portfolio','Equities & ETFs · ••3821',312450,'ok')">
+            <div class="col-radio"><div class="col-radio-inner"></div></div>
+            <div class="col-info">
+              <div class="col-name">Alpha Growth Portfolio</div>
+              <div class="col-sub">Equities &amp; ETFs · ••3821</div>
+              <span class="col-badge badge-ok">Eligible</span>
+            </div>
+            <div class="col-amount">$312,450</div>
+          </div>
+          <div class="collateral-card" onclick="selectCollateral(this,'Fixed Income Reserve','Bonds & Treasuries · ••5504',88200,'ok')">
+            <div class="col-radio"><div class="col-radio-inner"></div></div>
+            <div class="col-info">
+              <div class="col-name">Fixed Income Reserve</div>
+              <div class="col-sub">Bonds &amp; Treasuries · ••5504</div>
+              <span class="col-badge badge-ok">Eligible</span>
+            </div>
+            <div class="col-amount">$88,200</div>
+          </div>
+          <div class="collateral-card" onclick="selectCollateral(this,'Retirement Savings','Pension / Locked · ••9910',24100,'warn')">
+            <div class="col-radio"><div class="col-radio-inner"></div></div>
+            <div class="col-info">
+              <div class="col-name">Retirement Savings</div>
+              <div class="col-sub">Pension / Locked · ••9910</div>
+              <span class="col-badge badge-warn">Restricted</span>
+            </div>
+            <div class="col-amount">$24,100</div>
+          </div>
+        </div>
+        <div id="eligibility-box" class="eligibility-check pending">
+          <i class="ti ti-info-circle elig-icon"></i>
+          <span>Select an account to check eligibility.</span>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="step-nav">
+        <button class="btn-secondary" onclick="goTo(1)">← Back</button>
+        <button class="btn-primary" id="btn-2" onclick="goTo(3)" disabled>Continue <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Repayment -->
+  <div id="screen-3" class="hidden">
+    <div class="card">
+      <div class="field-row">
+        <span class="field-label">Repayment date</span>
+        <div class="pill-row" id="date-pills">
+          <button class="pill" onclick="pickDate(this,'30d')">30 days</button>
+          <button class="pill" onclick="pickDate(this,'60d')">60 days</button>
+          <button class="pill" onclick="pickDate(this,'90d')">90 days</button>
+          <button class="pill" onclick="pickDate(this,'180d')">180 days</button>
+          <button class="pill" onclick="pickDate(this,'1y')">1 year</button>
+        </div>
+        <input type="date" id="repay-date" oninput="onDateInput(this)" />
+        <p class="date-hint" id="rate-hint"></p>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="step-nav">
+        <button class="btn-secondary" onclick="goTo(2)">← Back</button>
+        <button class="btn-primary" id="btn-3" onclick="goTo(4)" disabled>Review offer <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Review -->
+  <div id="screen-4" class="hidden">
+    <div class="card loader-row" id="loading-offer">
+      <div class="spinner"></div> Generating your loan offer…
+    </div>
+    <div id="offer-content" class="hidden">
+      <div class="offer-box">
+        <div class="offer-title"><i class="ti ti-file-invoice"></i> Your loan offer</div>
+        <div class="summary-row"><span class="summary-label">Loan amount</span><span class="summary-value" id="off-amount">—</span></div>
+        <div class="summary-row"><span class="summary-label">Currency</span><span class="summary-value" id="off-currency">—</span></div>
+        <div class="summary-row"><span class="summary-label">Collateral account</span><span class="summary-value" id="off-collateral">—</span></div>
+        <div class="summary-row"><span class="summary-label">LTV ratio</span><span class="summary-value" id="off-ltv">—</span></div>
+        <div class="summary-row"><span class="summary-label">Interest rate (p.a.)</span><span class="summary-value" id="off-rate">—</span></div>
+        <div class="summary-row"><span class="summary-label">Repayment date</span><span class="summary-value" id="off-date">—</span></div>
+        <div class="summary-total">
+          <span class="sl">Total repayable</span>
+          <span class="sv" id="off-total">—</span>
+        </div>
+        <div class="offer-terms">
+          <strong>Terms &amp; conditions:</strong> This offer is valid for 24 hours. Your selected collateral account will be placed under a lien for the duration of the loan. Early repayment is permitted at no additional charge. The interest rate is fixed for the term of this loan. Failure to repay by the due date may result in liquidation of collateral assets.
+        </div>
+        <div class="agree-row" onclick="toggleAgree()">
+          <div class="agree-check" id="agree-check"></div>
+          <span class="agree-text">I have read and agree to the loan terms and conditions above.</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btn-submit" onclick="submitLoan()" disabled style="margin-top:1rem;">
+          Confirm &amp; activate loan <i class="ti ti-shield-check"></i>
+        </button>
+        <div class="step-nav" style="margin-top:8px;">
+          <button class="btn-secondary" style="width:100%;" onclick="goTo(3)">← Edit repayment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="screen-success" class="hidden fade-in">
+    <div class="success-screen">
+      <div class="success-icon"><i class="ti ti-circle-check"></i></div>
+      <h2>Loan activated</h2>
+      <p>Your funds will be disbursed to your nominated account within 1–2 business hours. A confirmation has been sent to your registered email.</p>
+      <div class="ref-code" id="ref-code">LIQ-——</div>
+      <div style="margin-top:2rem;">
+        <button class="btn-primary" style="max-width:240px;margin:0 auto;" onclick="resetAll()">
+          <i class="ti ti-plus"></i> New loan request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let state = {
+    step: 1, currency: 'USD', amount: null,
+    collateral: null, colBalance: 0, colStatus: '',
+    repayDays: null, repayDate: null, agreed: false
+  };
+
+  const MINS  = { USD:1000, EUR:1000, GBP:800, NGN:500000, CHF:1000 };
+  const MAXS  = { USD:500000, EUR:480000, GBP:420000, NGN:250000000, CHF:490000 };
+  const RATES = { '30d':0.049,'60d':0.052,'90d':0.056,'180d':0.061,'1y':0.068 };
+
+  function fmt(n, cur) {
+    const sym = { USD:'$',EUR:'€',GBP:'£',NGN:'₦',CHF:'CHF ' }[cur||state.currency]||'';
+    return sym + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function setAmount(v) {
+    document.getElementById('borrow-amount').value = v;
+    document.querySelectorAll('#quick-amounts .pill').forEach(p => {
+      p.classList.toggle('selected', parseInt(p.textContent.replace(/,/g,'')) === v);
+    });
+    validateStep1();
+  }
+
+  document.getElementById('borrow-currency').addEventListener('change', function() {
+    state.currency = this.value;
+    document.querySelectorAll('.cur-label').forEach(el => el.textContent = this.value);
+    document.getElementById('min-label').textContent = MINS[this.value].toLocaleString();
+    document.getElementById('max-label').textContent = MAXS[this.value].toLocaleString();
+    validateStep1();
+  });
+
+  document.getElementById('borrow-amount').addEventListener('input', function() {
+    document.querySelectorAll('#quick-amounts .pill').forEach(p => p.classList.remove('selected'));
+    validateStep1();
+  });
+
+  function validateStep1() {
+    const cur = document.getElementById('borrow-currency').value;
+    const amt = parseFloat(document.getElementById('borrow-amount').value);
+    const hint = document.getElementById('amount-hint');
+    hint.classList.remove('hidden');
+    document.getElementById('min-label').textContent = MINS[cur].toLocaleString();
+    document.getElementById('max-label').textContent = MAXS[cur].toLocaleString();
+    const ok = !isNaN(amt) && amt >= MINS[cur] && amt <= MAXS[cur];
+    document.getElementById('btn-1').disabled = !ok;
+    if (ok) { state.currency = cur; state.amount = amt; }
+  }
+
+  function selectCollateral(el, name, sub, balance, status) {
+    document.querySelectorAll('.collateral-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    state.collateral = name; state.colBalance = balance; state.colStatus = status;
+    checkEligibility(status, balance);
+  }
+
+  function checkEligibility(status, balance) {
+    const box = document.getElementById('eligibility-box');
+    box.className = 'eligibility-check checking';
+    box.innerHTML = '<i class="ti ti-loader elig-icon" style="animation:spin 0.6s linear infinite;"></i><span>Checking eligibility…</span>';
+    document.getElementById('btn-2').disabled = true;
+    setTimeout(() => {
+      if (status === 'warn') {
+        box.className = 'eligibility-check fail';
+        box.innerHTML = '<i class="ti ti-alert-circle elig-icon"></i><span><strong>Not eligible.</strong> This account is restricted and cannot be used as collateral. Please select another account.</span>';
+      } else if (balance < state.amount * 1.4) {
+        box.className = 'eligibility-check fail';
+        box.innerHTML = '<i class="ti ti-alert-circle elig-icon"></i><span><strong>Insufficient collateral.</strong> Account balance must be at least 140% of the loan amount. Please reduce your loan or choose a larger account.</span>';
+      } else {
+        const ltv = ((state.amount / balance) * 100).toFixed(1);
+        box.className = 'eligibility-check ok';
+        box.innerHTML = `<i class="ti ti-circle-check elig-icon"></i><span><strong>Eligible.</strong> LTV ratio ${ltv}% — within the 70% maximum. This account can back your loan.</span>`;
+        document.getElementById('btn-2').disabled = false;
+      }
+    }, 1400);
+  }
+
+  function pickDate(el, key) {
+    document.querySelectorAll('#date-pills .pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    state.repayDays = key;
+    const days = {'30d':30,'60d':60,'90d':90,'180d':180,'1y':365}[key];
+    const d = new Date(); d.setDate(d.getDate() + days);
+    state.repayDate = d;
+    document.getElementById('repay-date').value = d.toISOString().split('T')[0];
+    showRateHint(key);
+    document.getElementById('btn-3').disabled = false;
+  }
+
+  function onDateInput(inp) {
+    const d = new Date(inp.value);
+    if (isNaN(d)) return;
+    state.repayDate = d;
+    const diff = Math.round((d - new Date()) / 86400000);
+    document.querySelectorAll('#date-pills .pill').forEach(p => p.classList.remove('selected'));
+    const key = diff <= 30 ? '30d' : diff <= 60 ? '60d' : diff <= 90 ? '90d' : diff <= 180 ? '180d' : '1y';
+    state.repayDays = key;
+    showRateHint(key);
+    document.getElementById('btn-3').disabled = diff < 7;
+  }
+
+  function showRateHint(key) {
+    document.getElementById('rate-hint').textContent =
+      `Annual interest rate for this term: ${(RATES[key]*100).toFixed(1)}% p.a.`;
+  }
+
+  function goTo(n) {
+    [1,2,3,4].forEach(i => {
+      const s = document.getElementById(`screen-${i}`);
+      if (s) s.classList.add('hidden');
+    });
+    const t = document.getElementById(`screen-${n}`);
+    if (t) { t.classList.remove('hidden'); t.classList.add('fade-in'); setTimeout(()=>t.classList.remove('fade-in'),400); }
+    state.step = n;
+    updateStepper();
+    if (n === 4) loadOffer();
+  }
+
+  function updateStepper() {
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById(`dot-${i}`);
+      const lbl = document.getElementById(`lbl-${i}`);
+      if (i < state.step) {
+        dot.className = 'step-dot done';
+        dot.innerHTML = '<i class="ti ti-check" style="font-size:13px"></i>';
+        lbl.className = 'step-label';
+        const c = document.getElementById(`conn-${i}`); if(c) c.classList.add('done');
+      } else if (i === state.step) {
+        dot.className = 'step-dot active';
+        dot.innerHTML = i === 1 ? '<i class="ti ti-currency-dollar" style="font-size:14px"></i>' : String(i);
+        lbl.className = 'step-label active';
+      } else {
+        dot.className = 'step-dot inactive';
+        dot.innerHTML = String(i);
+        lbl.className = 'step-label';
+      }
+    }
+  }
+
+  function loadOffer() {
+    document.getElementById('loading-offer').classList.remove('hidden');
+    document.getElementById('offer-content').classList.add('hidden');
+    setTimeout(() => {
+      const rate = RATES[state.repayDays];
+      const d = state.repayDate || new Date();
+      const years = (d - new Date()) / (365 * 86400000);
+      const total = state.amount + state.amount * rate * years;
+      const ltv = ((state.amount / state.colBalance) * 100).toFixed(1);
+      document.getElementById('off-amount').textContent = fmt(state.amount);
+      document.getElementById('off-currency').textContent = state.currency;
+      document.getElementById('off-collateral').textContent = state.collateral;
+      document.getElementById('off-ltv').textContent = `${ltv}%`;
+      document.getElementById('off-rate').textContent = `${(rate*100).toFixed(1)}%`;
+      document.getElementById('off-date').textContent = d.toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'});
+      document.getElementById('off-total').textContent = fmt(total);
+      document.getElementById('loading-offer').classList.add('hidden');
+      const oc = document.getElementById('offer-content');
+      oc.classList.remove('hidden'); oc.classList.add('fade-in');
+      setTimeout(()=>oc.classList.remove('fade-in'),400);
+    }, 1800);
+  }
+
+  function toggleAgree() {
+    state.agreed = !state.agreed;
+    document.getElementById('agree-check').className = 'agree-check' + (state.agreed ? ' checked' : '');
+    document.getElementById('btn-submit').disabled = !state.agreed;
+  }
+
+  function submitLoan() {
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-sm"></div> Activating…';
+    setTimeout(() => {
+      document.getElementById('screen-4').classList.add('hidden');
+      const ss = document.getElementById('screen-success');
+      ss.classList.remove('hidden');
+      document.getElementById('ref-code').textContent = 'LIQ-' + Math.random().toString(36).slice(2,8).toUpperCase();
+      for (let i=1;i<=4;i++) {
+        const d=document.getElementById(`dot-${i}`); if(d){d.className='step-dot done';d.innerHTML='<i class="ti ti-check" style="font-size:13px"></i>';}
+        const c=document.getElementById(`conn-${i}`); if(c) c.classList.add('done');
+      }
+    }, 2000);
+  }
+
+  function resetAll() {
+    state = {step:1,currency:'USD',amount:null,collateral:null,colBalance:0,colStatus:'',repayDays:null,repayDate:null,agreed:false};
+    document.getElementById('borrow-amount').value = '';
+    document.getElementById('borrow-currency').value = 'USD';
+    document.getElementById('amount-hint').classList.add('hidden');
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+    document.querySelectorAll('.collateral-card').forEach(c=>c.classList.remove('selected'));
+    document.getElementById('eligibility-box').className='eligibility-check pending';
+    document.getElementById('eligibility-box').innerHTML='<i class="ti ti-info-circle elig-icon"></i><span>Select an account to check eligibility.</span>';
+    document.getElementById('agree-check').className='agree-check';
+    document.getElementById('repay-date').value='';
+    document.getElementById('rate-hint').textContent='';
+    document.getElementById('btn-1').disabled=true;
+    document.getElementById('btn-2').disabled=true;
+    document.getElementById('btn-3').disabled=true;
+    document.getElementById('screen-success').classList.add('hidden');
+    document.getElementById('screen-1').classList.remove('hidden');
+    for(let i=1;i<=3;i++){const c=document.getElementById(`conn-${i}`);if(c)c.classList.remove('done');}
+    updateStepper();
+  }
+</script>
+</body>
+</html>
